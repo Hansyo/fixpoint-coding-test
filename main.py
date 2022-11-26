@@ -36,30 +36,38 @@ class Server:
 
         self.ping_results[parse_datetime(datetime_str=datetime_str)] = response_msec
 
-    def has_downtime(self) -> bool:
-        """
-        Serverが応答しなかったことがあるかどうか調べる
-        """
-        return Server.TIMEOUT_SYMBOL in self.ping_results.values()
-
-    def get_downtimes(self) -> List[Tuple[DT.datetime, Optional[DT.datetime]]]:
+    def get_downtimes(self, threshold: int = 1) -> List[Tuple[DT.datetime, Optional[DT.datetime]]]:
         """
         サーバーのダウンタイム情報をすべて取得する
 
+        Parameters
+        ----------
+        threshold : int, default=1
+            サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
+            デフォルトでは1回
+            0以下を指定した場合、AssertionErrorとなる
+
         Returns
+        -------
         List[Tuple[datetime.datetime, datetime.datetime]]
             サーバー上に存在するダウンタイムの開始時間と終了時間のペアを返す。
             記録された最後の記録がダウン状態だった場合、終了時間は`None`となる。
+
+        Raises
+        ------
+        AssertionError
+            `threshold` が 0以下に指定された
         """
 
+        assert threshold > 0, "Value Error -> threshold must over 0"
         sorted_ping_results: List[Tuple[DT.datetime, int]] = sorted(self.ping_results.items())
         sorted_response: List[int] = [resp for _, resp in sorted_ping_results]
         # ダウンした列番号を取得
         down_recode: List[int] = [i for i, resp in enumerate(sorted_response) if resp == Server.TIMEOUT_SYMBOL]
         properly_recode: List[int] = [i for i, resp in enumerate(sorted_response) if resp != Server.TIMEOUT_SYMBOL]
-        # 連続した番号を削除
-        down_recode_alt: List[int] = [
-            list(g)[0]
+        # 連続した番号をまとめる
+        down_recode_alt: List[List[int]] = [
+            list(g)
             for _, g in itertools.groupby(
                 down_recode, key=(lambda n, c=itertools.count(): n - next(c))  # type: ignore
             )
@@ -72,16 +80,18 @@ class Server:
         ]
         # ペアを生成
         result: List[Tuple[DT.datetime, Optional[DT.datetime]]] = []
-        for i in down_recode_alt:
-            while True:
-                if len(properly_recode_alt) != 0 and properly_recode_alt[0] < i:
-                    properly_recode_alt.pop(0)
+        for recodes in down_recode_alt:
+            if len(recodes) >= threshold:
+                target: int = recodes[0]
+                while True:
+                    if len(properly_recode_alt) != 0 and properly_recode_alt[0] < target:
+                        properly_recode_alt.pop(0)
+                    else:
+                        break
+                if len(properly_recode_alt) != 0:
+                    result.append((sorted_ping_results[target][0], sorted_ping_results[properly_recode_alt.pop(0)][0]))
                 else:
-                    break
-            if len(properly_recode_alt) != 0:
-                result.append((sorted_ping_results[i][0], sorted_ping_results[properly_recode_alt.pop(0)][0]))
-            else:
-                result.append((sorted_ping_results[i][0], None))
+                    result.append((sorted_ping_results[target][0], None))
         return result
 
 
@@ -135,7 +145,7 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
     """
 
     with open(file_path) as f:
-        _ = f.readline()  # ファイルの先頭を読み飛ばす
+        _ = f.readline()  # ファイルの先頭は説明文なので読み飛ばす
         for line in f.readlines():
             line_strip = line.strip()
             datetime, ip_address, ip_prefix, result_msec = csv_to_params(line_strip)
@@ -145,12 +155,52 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
     return servers
 
 
-if __name__ == "__main__":
-    file_path = "test_case/001.csv"
+def print_server_downtime(servers: Dict[str, Server], threshold=1):
+    """
+    サーバー郡のダウン情報を表示する
 
-    servers = load_data(file_path=file_path)
-    for ip_address, server in servers.items():
-        if server.has_downtime():
+    Parameters
+    ----------
+    servers : Dict[str, Server]
+        確認を行うサーバーリスト
+    threshold : int, default=1
+        サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
+        デフォルトでは1回
+        0以下を指定した場合、AssertionErrorとなる
+
+    Returns
+    -------
+    List[Tuple[datetime.datetime, datetime.datetime]]
+        サーバー上に存在するダウンタイムの開始時間と終了時間のペアを返す。
+        記録された最後の記録がダウン状態だった場合、終了時間は`None`となる。
+
+    Raises
+    ------
+    AssertionError
+        `threshold` が 0以下に指定された
+    """
+
+    for server in servers.values():
+        downtime_list = server.get_downtimes(threshold=threshold)
+        if len(downtime_list) != 0:
             print(f"{server.ip_address} has downtime")
-            for start, end in server.get_downtimes():
+            for start, end in downtime_list:
                 print(f"    {start} ~ {end if end is not None else ''}")
+        else:
+            print(f"{server.ip_address} has no downtime")
+
+
+if __name__ == "__main__":
+    file_path = "test_case/002.csv"
+    servers = load_data(file_path=file_path)
+
+    # Exam 1
+    print("\n****** EXAM 1 ******")
+    print_server_downtime(servers=servers)
+
+    # Exam 2
+    print("\n****** EXAM 2 ******")
+    for threshold in range(1, 8):
+        print("##########################")
+        print(f"threshold: {threshold}")
+        print_server_downtime(servers=servers, threshold=threshold)
