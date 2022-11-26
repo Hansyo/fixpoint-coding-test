@@ -1,0 +1,18 @@
+{
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Path": "~/.cache/pypoetry/virtualenvs/fixpoint-coding-test-3ti5_Wfc-py3.8/bin/pflake8",
+    "python.linting.mypyEnabled": true,
+    "python.formatting.provider": "black",
+    "python.formatting.blackPath": "~/.cache/pypoetry/virtualenvs/fixpoint-coding-test-3ti5_Wfc-py3.8/bin/black",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    }
+}
