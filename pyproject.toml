@@ -24,7 +24,7 @@ build-backend = "poetry.core.masonry.api"
 # 1行の文字数
 max-line-length = 119
 # いくつかのメッセージを抑制
-extend-ignore = ["E266", "F401",]
+extend-ignore = ["E266", "F401", "E203"]
 
 [tool.black]
 # 1行の文字数
