@@ -7,13 +7,16 @@ from typing import Dict, List, Optional, Tuple
 class Server:
     """
     ログデータから生成されるサーバー情報
+
+    TIMEOUT_SYMBOL: int = -1
+        タイムアウトした際に記録される数値
     """
 
     ip_address: ipaddress.IPv4Address = ipaddress.IPv4Address("0.0.0.0")
     ip_prefix: int = 0
     ping_results: Dict[DT.datetime, int] = {}
 
-    TIMEOUT_SYMBOL = -1
+    TIMEOUT_SYMBOL: int = -1
 
     def __init__(self, ip_address: str, ip_prefix: int):
         self.ip_address = ipaddress.IPv4Address(ip_address)
@@ -50,8 +53,8 @@ class Server:
         Returns
         -------
         List[Tuple[datetime.datetime, datetime.datetime]]
-            サーバー上に存在するダウンタイムの開始時間と終了時間のペアを返す。
-            記録された最後の記録がダウン状態だった場合、終了時間は`None`となる。
+            サーバー上に存在するダウンタイムの開始時間と終了時間のペアをリストで返す。
+            最後の記録までダウン状態と判別された場合、終了時間は`None`となる。
 
         Raises
         ------
@@ -96,6 +99,11 @@ class Server:
 
 
 def csv_to_params(csv_text: str) -> Tuple[str, str, int, int]:
+    """
+    CSV1行の入力を、各パラメータに分解する
+    """
+
+    # TODO: validation
     datetime, server_address, result_msec_str = csv_text.split(",")
     ip_address, ip_prefix_str = server_address.split("/")
     ip_prefix: int = int(ip_prefix_str)
@@ -137,6 +145,7 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
         ログデータのファイルパス
     servers : Dict[str, Server], optional
         既存のサーバーデータがある場合のみ指定。
+        追記形式でデータを読み込む
 
     Returns
     -------
