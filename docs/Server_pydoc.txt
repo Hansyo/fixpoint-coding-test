@@ -1,0 +1,201 @@
+Help on module Server:
+
+NAME
+    Server
+
+CLASSES
+    builtins.object
+        Server
+    
+    class Server(builtins.object)
+     |  Server(ip_address: str, ip_prefix: int)
+     |  
+     |  ログデータから生成されるサーバー情報
+     |  
+     |  TIMEOUT_SYMBOL: int = -1
+     |      タイムアウトした際に記録される数値
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, ip_address: str, ip_prefix: int)
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  append_ping_results(self, datetime_str: str, response_msec: int)
+     |      サーバーに応答ログを新たに登録する
+     |      
+     |      Parameters
+     |      ----------
+     |      datetime : str
+     |          ログの日時情報
+     |          "YYYYMMDDhhmmss"形式
+     |      result_msec : int
+     |          サーバーの応答時間。
+     |          タイムアウトの場合は、`Server.TIMEOUT_SYMBOL`を指定
+     |  
+     |  get_downtimes(self, continuous: int = 1) -> List[Tuple[datetime.datetime, Union[datetime.datetime, NoneType]]]
+     |      サーバーのダウンタイム情報をすべて取得する
+     |      
+     |      Parameters
+     |      ----------
+     |      contiinuous_num : int, default=1
+     |          サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
+     |          デフォルトでは1回
+     |          0以下を指定した場合、AssertionErrorとなる
+     |      
+     |      Returns
+     |      -------
+     |      List[Tuple[datetime.datetime, datetime.datetime]]
+     |          サーバー上に存在するダウンタイムの開始時間と終了時間のペアをリストで返す。
+     |          最後の記録までダウン状態と判別された場合、終了時間は`None`となる。
+     |      
+     |      Raises
+     |      ------
+     |      AssertionError
+     |          `contiinuous_num` が 0以下に指定された
+     |  
+     |  get_overload_times(self, continuous: int = 3, time_threshold: int = 100) -> List[Tuple[datetime.datetime, Union[datetime.datetime, NoneType]]]
+     |      サーバーが過負荷になった期間を開始、終了日時のペアで取得する
+     |      
+     |      Parameters
+     |      ----------
+     |      continuous : int, default = 3
+     |          過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
+     |          前方に対して平均を取り、サーバーの開始直後やタイムアウト時には、`continuous_num`以内の有効なデータを用いて平均を取る。
+     |      time_threshold : int, default = 100
+     |          過負荷状態と判定するための応答時間閾値
+     |      
+     |      Returns
+     |      -------
+     |      List[Tuple[datetime.datetime, datetime.datetime]]
+     |          サーバー上に存在する過負荷状態の開始時間と終了時間のペアをリストで返す。
+     |          最後の記録まで過負荷状態だった場合、終了時間は`None`となる。
+     |      
+     |      Raises
+     |      ------
+     |      AsssertioinError
+     |          入力値の入力範囲外の値が入力された
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  TIMEOUT_SYMBOL = -1
+     |  
+     |  __annotations__ = {'TIMEOUT_SYMBOL': <class 'int'>, 'ip_address': <cla...
+     |  
+     |  ip_address = IPv4Address('0.0.0.0')
+     |  
+     |  ip_prefix = 0
+     |  
+     |  ping_results = {}
+
+FUNCTIONS
+    csv_to_params(csv_text: str) -> Tuple[str, str, int, int]
+        CSV1行の入力を、各パラメータに分解する
+    
+    load_data(file_path: str, servers: Dict[str, Server.Server] = {}) -> Dict[str, Server.Server]
+        ログデータからサーバーデータを生成する
+        
+        Parameters
+        ----------
+        file_path : str
+            ログデータのファイルパス
+        servers : Dict[str, Server], optional
+            既存のサーバーデータがある場合のみ指定。
+            追記形式でデータを読み込む
+        
+        Returns
+        -------
+        Dict[str, Server]
+            IPアドレスに紐づいたサーバーデータ
+    
+    parse_datetime(datetime_str: str) -> datetime.datetime
+        日時情報を年月日時分秒にパースする
+        
+        Parameters
+        ----------
+        datetime_str : str
+            "YYYYMMDDhhmmss"の文字列
+        
+        Returns
+        -------
+        datetime.datetime
+            datetime_strから生成された`datetime`オブジェクト
+        
+        Raises
+        ------
+        ValueError
+            `datetime` が有効な日時ではない
+    
+    print_server_downtime(servers: Dict[str, Server.Server], continuous: int = 1)
+        サーバー群のダウン情報を表示する
+        
+        Parameters
+        ----------
+        servers : Dict[str, Server]
+            確認を行うサーバーリスト
+        threshold : int, default=1
+            サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
+            デフォルトでは1回
+            0以下を指定した場合、AssertionErrorとなる
+        
+        Returns
+        -------
+        List[Tuple[datetime.datetime, datetime.datetime]]
+            サーバー上に存在するダウンタイムの開始時間と終了時間のペアを返す。
+            記録された最後の記録がダウン状態だった場合、終了時間は`None`となる。
+        
+        Raises
+        ------
+        AssertionError
+            `threshold` が 0以下に指定された
+    
+    print_server_error(servers: Dict[str, Server.Server], continuous: int = 3, time_threshold: int = 100)
+        サーバー群のダウン情報と過負荷情報を表示する
+        
+        Parameters
+        ----------
+        continuous : int, default = 3
+            ダウン/過負荷状態と判定するために、何応答分まとめて処理を行うかの指定。
+        time_threshold : int, default = 100
+            過負荷状態と判定するための応答時間閾値。
+        
+        Raises
+        ------
+        AssertionError
+            `continuous`か`time_threshold` が0以下に指定された。
+    
+    print_server_overload(servers: Dict[str, Server.Server], continuous: int = 3, time_threshold: int = 100)
+        サーバー群の過負荷情報を表示する
+        
+        Parameters
+        ----------
+        continuous : int, default = 3
+            過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
+            前方に対して平均を取り、サイバーの開始直後はすでにあるデータのみを用いて平均を取る。
+        time_threshold : int, default = 100
+            過負荷状態と判定するための応答時間閾値。
+        
+        Raises
+        ------
+        AssertionError
+            `continuous`か`time_threshold` が0以下に指定された。
+
+DATA
+    Dict = typing.Dict
+    List = typing.List
+    Optional = typing.Optional
+    Tuple = typing.Tuple
+
+FILE
+    /home/hansy/git/fixpoint-coding-test/fixpoint_coding_test/Server.py
+
+
