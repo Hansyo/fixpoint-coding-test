@@ -1,5 +1,3 @@
-import datetime as DT
-
 from fixpoint_coding_test import Server
 
 
@@ -20,7 +18,7 @@ def test_exam2_01(capfd):
 def test_exam2_02(capfd):
     file_path = "test_case/002.csv"
     servers = Server.load_data(file_path=file_path)
-    Server.print_server_downtime(servers=servers, threshold=1)
+    Server.print_server_downtime(servers=servers, continuous=1)
     out, _ = capfd.readouterr()
     assert (
         out
@@ -38,7 +36,7 @@ def test_exam2_02(capfd):
 def test_exam2_03(capfd):
     file_path = "test_case/002.csv"
     servers = Server.load_data(file_path=file_path)
-    Server.print_server_downtime(servers=servers, threshold=3)
+    Server.print_server_downtime(servers=servers, continuous=3)
     out, _ = capfd.readouterr()
     assert (
         out
@@ -54,7 +52,7 @@ def test_exam2_03(capfd):
 def test_exam2_04(capfd):
     file_path = "test_case/002.csv"
     servers = Server.load_data(file_path=file_path)
-    Server.print_server_downtime(servers=servers, threshold=6)
+    Server.print_server_downtime(servers=servers, continuous=6)
     out, _ = capfd.readouterr()
     assert (
         out
@@ -67,7 +65,7 @@ def test_exam2_04(capfd):
 def test_exam2_05(capfd):
     file_path = "test_case/002.csv"
     servers = Server.load_data(file_path=file_path)
-    Server.print_server_downtime(servers=servers, threshold=7)
+    Server.print_server_downtime(servers=servers, continuous=7)
     out, _ = capfd.readouterr()
     assert (
         out

@@ -40,13 +40,13 @@ class Server:
 
         self.ping_results[parse_datetime(datetime_str=datetime_str)] = response_msec
 
-    def get_downtimes(self, threshold: int = 1) -> List[Tuple[DT.datetime, Optional[DT.datetime]]]:
+    def get_downtimes(self, continuous: int = 1) -> List[Tuple[DT.datetime, Optional[DT.datetime]]]:
         """
         サーバーのダウンタイム情報をすべて取得する
 
         Parameters
         ----------
-        threshold : int, default=1
+        continuous : int, default=1
             サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
             デフォルトでは1回
             0以下を指定した場合、AssertionErrorとなる
@@ -60,10 +60,10 @@ class Server:
         Raises
         ------
         AssertionError
-            `threshold` が 0以下に指定された
+            `continuous` が 0以下に指定された
         """
 
-        assert threshold > 0, "Value Error -> threshold must over 0"
+        assert continuous > 0, "Value Error -> continuous must over 0"
         sorted_ping_results: List[Tuple[DT.datetime, int]] = sorted(self.ping_results.items())
         sorted_response: List[int] = [resp for _, resp in sorted_ping_results]
         # ダウンした列番号を取得
@@ -85,7 +85,7 @@ class Server:
         # ペアを生成
         result: List[Tuple[DT.datetime, Optional[DT.datetime]]] = []
         for recodes in down_recode_alt:
-            if len(recodes) >= threshold:
+            if len(recodes) >= continuous:
                 target: int = recodes[0]
                 while True:
                     if len(properly_recode_alt) != 0 and properly_recode_alt[0] < target:
@@ -166,9 +166,9 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
     return _servers
 
 
-def print_server_downtime(servers: Dict[str, Server], threshold=1):
+def print_server_downtime(servers: Dict[str, Server], continuous: int = 1):
     """
-    サーバー郡のダウン情報を表示する
+    サーバー群のダウン情報を表示する
 
     Parameters
     ----------
@@ -192,7 +192,7 @@ def print_server_downtime(servers: Dict[str, Server], threshold=1):
     """
 
     for server in servers.values():
-        downtime_list = server.get_downtimes(threshold=threshold)
+        downtime_list = server.get_downtimes(continuous=continuous)
         if len(downtime_list) != 0:
             print(f"{server.ip_address} has downtime")
             for start, end in downtime_list:
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     # Exam 2
     print("\n****** EXAM 2 ******")
-    for threshold in range(1, 8):
+    for continuous in range(1, 8):
         print("##########################")
-        print(f"threshold: {threshold}")
-        print_server_downtime(servers=servers, threshold=threshold)
+        print(f"threshold: {continuous}")
+        print_server_downtime(servers=servers, continuous=continuous)
