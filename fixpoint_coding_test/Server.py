@@ -1,3 +1,4 @@
+import copy
 import datetime as DT
 import ipaddress
 import itertools
@@ -153,15 +154,16 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
         IPアドレスに紐づいたサーバーデータ
     """
 
+    _servers = copy.copy(servers)  # copyを行い、既存のserversを参照しないようにする
     with open(file_path) as f:
         _ = f.readline()  # ファイルの先頭は説明文なので読み飛ばす
         for line in f.readlines():
             line_strip = line.strip()
             datetime, ip_address, ip_prefix, result_msec = csv_to_params(line_strip)
-            if ip_address not in servers.keys():
-                servers[ip_address] = Server(ip_address=ip_address, ip_prefix=ip_prefix)
-            servers[ip_address].append_ping_results(datetime, result_msec)
-    return servers
+            if ip_address not in _servers.keys():
+                _servers[ip_address] = Server(ip_address=ip_address, ip_prefix=ip_prefix)
+            _servers[ip_address].append_ping_results(datetime, result_msec)
+    return _servers
 
 
 def print_server_downtime(servers: Dict[str, Server], threshold=1):
