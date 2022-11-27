@@ -98,14 +98,97 @@ class Server:
                     result.append((sorted_ping_results[target][0], None))
         return result
 
+    def get_overload_times(
+        self, continuous: int = 3, time_threshold: int = 100
+    ) -> List[Tuple[DT.datetime, Optional[DT.datetime]]]:
+        """
+        サーバーが過負荷になった期間を開始、終了日時のペアで取得する
+
+        Parameters
+        ----------
+        continuous : int, default = 3
+            過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
+            前方に対して平均を取り、サーバーの開始直後やタイムアウト時には、`continuous`以内の有効なデータを用いて平均を取る。
+        time_threshold : int, default = 100
+            過負荷状態と判定するための応答時間閾値
+
+        Returns
+        -------
+        List[Tuple[datetime.datetime, datetime.datetime]]
+            サーバー上に存在する過負荷状態の開始時間と終了時間のペアをリストで返す。
+            最後の記録まで過負荷状態だった場合、終了時間は`None`となる。
+
+        Raises
+        ------
+        AsssertioinError
+            入力値の入力範囲外の値が入力された
+        """
+
+        assert continuous > 0, "Value Error -> continuous must over 0"
+        assert time_threshold > 0, "Value Error -> time_threshold must over 0"
+        sorted_ping_results: List[Tuple[DT.datetime, int]] = sorted(self.ping_results.items())
+        sorted_response: List[int] = [resp for _, resp in sorted_ping_results]
+
+        # 過負荷状態の行番号を得る
+        overload_list_pre: List[int] = []
+        non_overload_list_pre: List[int] = []
+        _is_timeout_now: bool = True
+        for i in range(len(sorted_response)):
+            _tmp = sorted_response[(i - continuous + 1 if i >= continuous else 0) : (i + 1)]
+            _frame_timeout: bool = _tmp[-1] == Server.TIMEOUT_SYMBOL
+            while Server.TIMEOUT_SYMBOL in _tmp:
+                _tmp.remove(Server.TIMEOUT_SYMBOL)
+            if len(_tmp) != 0:
+                if (sum(_tmp) / len(_tmp)) >= time_threshold or _frame_timeout:
+                    overload_list_pre.append(i)
+                else:
+                    non_overload_list_pre.append(i)
+                _is_timeout_now = False
+            else:
+                if not _is_timeout_now:  # タイムアウトを検出したため、一部データのロールバックを行う
+                    non_overload_list_pre.extend(overload_list_pre[-min(continuous, i) + 1 :])
+                    del overload_list_pre[-min(continuous, i) + 1 :]
+                    _is_timeout_now = True
+                non_overload_list_pre.append(i)
+
+        # 連続した番号をまとめる
+        overload_list: List[List[int]] = [
+            list(g)
+            for _, g in itertools.groupby(
+                overload_list_pre, key=(lambda n, c=itertools.count(): n - next(c))  # type: ignore
+            )
+        ]
+        non_overload_list: List[int] = [
+            list(g)[0]
+            for _, g in itertools.groupby(
+                non_overload_list_pre, key=(lambda n, c=itertools.count(): n - next(c))  # type: ignore
+            )
+        ]
+
+        result: List[Tuple[DT.datetime, Optional[DT.datetime]]] = []
+        for recodes in overload_list:
+            target: int = recodes[0]
+            while True:
+                if len(non_overload_list) != 0 and non_overload_list[0] < target:
+                    non_overload_list.pop(0)
+                else:
+                    break
+            if len(non_overload_list) != 0:
+                result.append((sorted_ping_results[target][0], sorted_ping_results[non_overload_list.pop(0)][0]))
+            else:
+                result.append((sorted_ping_results[target][0], None))
+        return result
+
 
 def csv_to_params(csv_text: str) -> Tuple[str, str, int, int]:
     """
     CSV1行の入力を、各パラメータに分解する
     """
 
-    # TODO: validation
-    datetime, server_address, result_msec_str = csv_text.split(",")
+    assert len(csv_text) != 0, "ValueError csv_text is empty"
+    params = csv_text.split(",")
+    assert len(params) == 3, f"ValueError '{csv_text}' is invalid format"
+    datetime, server_address, result_msec_str = params
     ip_address, ip_prefix_str = server_address.split("/")
     ip_prefix: int = int(ip_prefix_str)
     result_msec: int = int(result_msec_str) if result_msec_str.isdigit() else Server.TIMEOUT_SYMBOL
@@ -159,6 +242,8 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
         _ = f.readline()  # ファイルの先頭は説明文なので読み飛ばす
         for line in f.readlines():
             line_strip = line.strip()
+            if len(line_strip) == 0:  # 入力が空の場合は処理をスキップ
+                continue
             datetime, ip_address, ip_prefix, result_msec = csv_to_params(line_strip)
             if ip_address not in _servers.keys():
                 _servers[ip_address] = Server(ip_address=ip_address, ip_prefix=ip_prefix)
@@ -201,6 +286,71 @@ def print_server_downtime(servers: Dict[str, Server], continuous: int = 1):
             print(f"{server.ip_address} has no downtime")
 
 
+def print_server_overload(servers: Dict[str, Server], continuous: int = 3, time_threshold: int = 100):
+    """
+    サーバー群の過負荷情報を表示する
+
+    Parameters
+    ----------
+    continuous : int, default = 3
+        過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
+        前方に対して平均を取り、サイバーの開始直後はすでにあるデータのみを用いて平均を取る。
+    time_threshold : int, default = 100
+        過負荷状態と判定するための応答時間閾値。
+
+    Raises
+    ------
+    AssertionError
+        `continuous`か`time_threshold` が0以下に指定された。
+    """
+
+    for server in servers.values():
+        overload_list = server.get_overload_times(continuous=continuous, time_threshold=time_threshold)
+        if len(overload_list) != 0:
+            print(f"{server.ip_address} has overload")
+            for start, end in overload_list:
+                print(f"    {start} ~ {end if end is not None else ''}")
+        else:
+            print(f"{server.ip_address} has no overload")
+
+
+def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_threshold: int = 100):
+    """
+    サーバー群のダウン情報と過負荷情報を表示する
+
+    Parameters
+    ----------
+    continuous : int, default = 3
+        ダウン/過負荷状態と判定するために、何応答分まとめて処理を行うかの指定。
+    time_threshold : int, default = 100
+        過負荷状態と判定するための応答時間閾値。
+
+    Raises
+    ------
+    AssertionError
+        `continuous`か`time_threshold` が0以下に指定された。
+    """
+
+    def _add_label(
+        time_pair: Tuple[DT.datetime, Optional[DT.datetime]], label: str
+    ) -> Tuple[DT.datetime, Optional[DT.datetime], str]:
+        return (time_pair[0], time_pair[1], label)
+
+    for server in servers.values():
+        downtime_list_pre = server.get_downtimes(continuous=continuous)
+        downtime_list = [_add_label(data, "downtime") for data in downtime_list_pre]
+        overload_list_pre = server.get_overload_times(continuous=continuous, time_threshold=time_threshold)
+        overload_list = [_add_label(data, "overload") for data in overload_list_pre]
+        erros_list = sorted(downtime_list + overload_list)
+
+        if len(erros_list) != 0:
+            print(f"{server.ip_address} has error")
+            for start, end, label in erros_list:
+                print(f"    {label} {start} ~ {end if end is not None else ''}")
+        else:
+            print(f"{server.ip_address} has no error")
+
+
 if __name__ == "__main__":
     file_path = "test_case/002.csv"
     servers = load_data(file_path=file_path)
@@ -215,3 +365,9 @@ if __name__ == "__main__":
         print("##########################")
         print(f"threshold: {continuous}")
         print_server_downtime(servers=servers, continuous=continuous)
+
+    # Exam 3
+    print("\n****** EXAM 3 ******")
+    file_path = "test_case/003_03.csv"
+    servers = load_data(file_path=file_path)
+    print_server_error(servers=servers)
