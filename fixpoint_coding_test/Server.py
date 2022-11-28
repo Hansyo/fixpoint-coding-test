@@ -13,15 +13,13 @@ class Server:
         タイムアウトした際に記録される数値
     """
 
-    ip_address: ipaddress.IPv4Address = ipaddress.IPv4Address("0.0.0.0")
-    ip_prefix: int = 0
-    ping_results: Dict[DT.datetime, int] = {}
+    ip_address: ipaddress.IPv4Interface
+    ping_results: Dict[DT.datetime, int]
 
     TIMEOUT_SYMBOL: int = -1
 
-    def __init__(self, ip_address: str, ip_prefix: int):
-        self.ip_address = ipaddress.IPv4Address(ip_address)
-        self.ip_prefix = ip_prefix
+    def __init__(self, ip_address: str):
+        self.ip_address = ipaddress.IPv4Interface(ip_address)
         self.ping_results = {}
 
     def append_ping_results(self, datetime_str: str, response_msec: int):
@@ -180,19 +178,26 @@ class Server:
         return result
 
 
-def csv_to_params(csv_text: str) -> Tuple[str, str, int, int]:
+def csv_to_params(csv_text: str) -> Tuple[str, str, int]:
     """
     CSV1行の入力を、各パラメータに分解する
+
+    Returns
+    -------
+    datetime : str
+        日時情報
+    server_address : str
+        サーバーのIPアドレスとネットワークプレフィックス長のペア
+    response_msec : int
+        サーバーからの応答にかかった時間(ミリ秒)
     """
 
     assert len(csv_text) != 0, "ValueError csv_text is empty"
     params = csv_text.split(",")
     assert len(params) == 3, f"ValueError '{csv_text}' is invalid format"
     datetime, server_address, result_msec_str = params
-    ip_address, ip_prefix_str = server_address.split("/")
-    ip_prefix: int = int(ip_prefix_str)
-    result_msec: int = int(result_msec_str) if result_msec_str.isdigit() else Server.TIMEOUT_SYMBOL
-    return datetime, ip_address, ip_prefix, result_msec
+    response_msec: int = int(result_msec_str) if result_msec_str.isdigit() else Server.TIMEOUT_SYMBOL
+    return datetime, server_address, response_msec
 
 
 def parse_datetime(datetime_str: str) -> DT.datetime:
@@ -244,9 +249,10 @@ def load_data(file_path: str, servers: Dict[str, Server] = {}) -> Dict[str, Serv
             line_strip = line.strip()
             if len(line_strip) == 0:  # 入力が空の場合は処理をスキップ
                 continue
-            datetime, ip_address, ip_prefix, result_msec = csv_to_params(line_strip)
+            datetime, server_address, result_msec = csv_to_params(line_strip)
+            ip_address, _ = server_address.split("/")
             if ip_address not in _servers.keys():
-                _servers[ip_address] = Server(ip_address=ip_address, ip_prefix=ip_prefix)
+                _servers[ip_address] = Server(ip_address=server_address)
             _servers[ip_address].append_ping_results(datetime, result_msec)
     return _servers
 
@@ -279,11 +285,11 @@ def print_server_downtime(servers: Dict[str, Server], continuous: int = 1):
     for server in servers.values():
         downtime_list = server.get_downtimes(continuous=continuous)
         if len(downtime_list) != 0:
-            print(f"{server.ip_address} has downtime")
+            print(f"{server.ip_address.ip} has downtime")
             for start, end in downtime_list:
                 print(f"    {start} ~ {end if end is not None else ''}")
         else:
-            print(f"{server.ip_address} has no downtime")
+            print(f"{server.ip_address.ip} has no downtime")
 
 
 def print_server_overload(servers: Dict[str, Server], continuous: int = 3, time_threshold: int = 100):
@@ -292,6 +298,8 @@ def print_server_overload(servers: Dict[str, Server], continuous: int = 3, time_
 
     Parameters
     ----------
+    servers : Dict[str, Server]
+        確認を行うサーバーリスト
     continuous : int, default = 3
         過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
         前方に対して平均を取り、サイバーの開始直後はすでにあるデータのみを用いて平均を取る。
@@ -307,11 +315,11 @@ def print_server_overload(servers: Dict[str, Server], continuous: int = 3, time_
     for server in servers.values():
         overload_list = server.get_overload_times(continuous=continuous, time_threshold=time_threshold)
         if len(overload_list) != 0:
-            print(f"{server.ip_address} has overload")
+            print(f"{server.ip_address.ip} has overload")
             for start, end in overload_list:
                 print(f"    {start} ~ {end if end is not None else ''}")
         else:
-            print(f"{server.ip_address} has no overload")
+            print(f"{server.ip_address.ip} has no overload")
 
 
 def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_threshold: int = 100):
@@ -320,6 +328,8 @@ def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_thr
 
     Parameters
     ----------
+    servers : Dict[str, Server]
+        確認を行うサーバーリスト
     continuous : int, default = 3
         ダウン/過負荷状態と判定するために、何応答分まとめて処理を行うかの指定。
     time_threshold : int, default = 100
@@ -344,11 +354,11 @@ def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_thr
         errors_list = sorted(downtime_list + overload_list)
 
         if len(errors_list) != 0:
-            print(f"{server.ip_address} has error")
+            print(f"{server.ip_address.ip} has error")
             for start, end, label in errors_list:
                 print(f"    {label} {start} ~ {end if end is not None else ''}")
         else:
-            print(f"{server.ip_address} has no error")
+            print(f"{server.ip_address.ip} has no error")
 
 
 if __name__ == "__main__":

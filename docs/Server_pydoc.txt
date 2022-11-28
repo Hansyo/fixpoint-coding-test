@@ -8,7 +8,7 @@ CLASSES
         Server
     
     class Server(builtins.object)
-     |  Server(ip_address: str, ip_prefix: int)
+     |  Server(ip_address: str)
      |  
      |  ログデータから生成されるサーバー情報
      |  
@@ -17,7 +17,7 @@ CLASSES
      |  
      |  Methods defined here:
      |  
-     |  __init__(self, ip_address: str, ip_prefix: int)
+     |  __init__(self, ip_address: str)
      |      Initialize self.  See help(type(self)) for accurate signature.
      |  
      |  append_ping_results(self, datetime_str: str, response_msec: int)
@@ -37,7 +37,7 @@ CLASSES
      |      
      |      Parameters
      |      ----------
-     |      contiinuous_num : int, default=1
+     |      continuous : int, default=1
      |          サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
      |          デフォルトでは1回
      |          0以下を指定した場合、AssertionErrorとなる
@@ -51,7 +51,7 @@ CLASSES
      |      Raises
      |      ------
      |      AssertionError
-     |          `contiinuous_num` が 0以下に指定された
+     |          `continuous` が 0以下に指定された
      |  
      |  get_overload_times(self, continuous: int = 3, time_threshold: int = 100) -> List[Tuple[datetime.datetime, Union[datetime.datetime, NoneType]]]
      |      サーバーが過負荷になった期間を開始、終了日時のペアで取得する
@@ -60,7 +60,7 @@ CLASSES
      |      ----------
      |      continuous : int, default = 3
      |          過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
-     |          前方に対して平均を取り、サーバーの開始直後やタイムアウト時には、`continuous_num`以内の有効なデータを用いて平均を取る。
+     |          前方に対して平均を取り、サーバーの開始直後やタイムアウト時には、`continuous`以内の有効なデータを用いて平均を取る。
      |      time_threshold : int, default = 100
      |          過負荷状態と判定するための応答時間閾値
      |      
@@ -72,7 +72,7 @@ CLASSES
      |      
      |      Raises
      |      ------
-     |      AsssertioinError
+     |      AssertionError
      |          入力値の入力範囲外の値が入力された
      |  
      |  ----------------------------------------------------------------------
@@ -90,16 +90,19 @@ CLASSES
      |  TIMEOUT_SYMBOL = -1
      |  
      |  __annotations__ = {'TIMEOUT_SYMBOL': <class 'int'>, 'ip_address': <cla...
-     |  
-     |  ip_address = IPv4Address('0.0.0.0')
-     |  
-     |  ip_prefix = 0
-     |  
-     |  ping_results = {}
 
 FUNCTIONS
-    csv_to_params(csv_text: str) -> Tuple[str, str, int, int]
+    csv_to_params(csv_text: str) -> Tuple[str, str, int]
         CSV1行の入力を、各パラメータに分解する
+        
+        Returns
+        -------
+        datetime : str
+            日時情報
+        server_address : str
+            サーバーのIPアドレスとネットワークプレフィックス長のペア
+        response_msec : int
+            サーバーからの応答にかかった時間(ミリ秒)
     
     load_data(file_path: str, servers: Dict[str, Server.Server] = {}) -> Dict[str, Server.Server]
         ログデータからサーバーデータを生成する
@@ -163,6 +166,8 @@ FUNCTIONS
         
         Parameters
         ----------
+        servers : Dict[str, Server]
+            確認を行うサーバーリスト
         continuous : int, default = 3
             ダウン/過負荷状態と判定するために、何応答分まとめて処理を行うかの指定。
         time_threshold : int, default = 100
@@ -178,6 +183,8 @@ FUNCTIONS
         
         Parameters
         ----------
+        servers : Dict[str, Server]
+            確認を行うサーバーリスト
         continuous : int, default = 3
             過負荷状態と判定するために、何応答用いて平均化処理を行うかの指定。
             前方に対して平均を取り、サイバーの開始直後はすでにあるデータのみを用いて平均を取る。

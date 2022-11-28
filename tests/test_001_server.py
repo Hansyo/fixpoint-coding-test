@@ -5,19 +5,16 @@ from fixpoint_coding_test import Server
 
 
 def test_create_server_instance_01():
-    ip_address = "10.20.30.1"
-    ip_prefix = 16
-    server = Server.Server(ip_address=ip_address, ip_prefix=ip_prefix)
-    assert server.ip_address == ipaddress.IPv4Address("10.20.30.1")
-    assert server.ip_prefix == 16
+    ip_address = "10.20.30.1/16"
+    server = Server.Server(ip_address=ip_address)
+    assert server.ip_address == ipaddress.IPv4Interface("10.20.30.1/16")
 
 
 def test_append_ping_results_01():
-    ip_address = "10.20.30.1"
-    ip_prefix = 16
+    ip_address = "10.20.30.1/16"
     datetime_str = "20201019133124"
     result_msec = 2
-    server = Server.Server(ip_address=ip_address, ip_prefix=ip_prefix)
+    server = Server.Server(ip_address=ip_address)
     server.append_ping_results(datetime_str, result_msec)
     assert server.ping_results == {DT.datetime(2020, 10, 19, 13, 31, 24): 2}
 
