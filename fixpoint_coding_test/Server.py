@@ -120,7 +120,7 @@ class Server:
 
         Raises
         ------
-        AsssertioinError
+        AssertionError
             入力値の入力範囲外の値が入力された
         """
 
@@ -341,11 +341,11 @@ def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_thr
         downtime_list = [_add_label(data, "downtime") for data in downtime_list_pre]
         overload_list_pre = server.get_overload_times(continuous=continuous, time_threshold=time_threshold)
         overload_list = [_add_label(data, "overload") for data in overload_list_pre]
-        erros_list = sorted(downtime_list + overload_list)
+        errors_list = sorted(downtime_list + overload_list)
 
-        if len(erros_list) != 0:
+        if len(errors_list) != 0:
             print(f"{server.ip_address} has error")
-            for start, end, label in erros_list:
+            for start, end, label in errors_list:
                 print(f"    {label} {start} ~ {end if end is not None else ''}")
         else:
             print(f"{server.ip_address} has no error")
