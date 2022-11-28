@@ -1,0 +1,141 @@
+Help on module Network:
+
+NAME
+    Network
+
+CLASSES
+    builtins.object
+        Network
+    
+    class Network(builtins.object)
+     |  Network(subnet_ipaddress: ipaddress.IPv4Network) -> None
+     |  
+     |  同一ネットワークサブネット内のサーバーをまとめて管理する
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, subnet_ipaddress: ipaddress.IPv4Network) -> None
+     |      Initialize self.  See help(type(self)) for accurate signature.
+     |  
+     |  add_server(self, server: fixpoint_coding_test.Server.Server) -> None
+     |      ネットワークにサーバーを追加する
+     |      
+     |      Parameters
+     |      ----------
+     |      server : Server
+     |          ネットワークに登録する`Server`インスタンス
+     |      
+     |      Raises
+     |      ------
+     |      AssertionError
+     |          追加するサーバーがネットワークに所属していない
+     |  
+     |  get_network_downtime(self, continuous: int = 3) -> List[Tuple[datetime.datetime, Union[datetime.datetime, NoneType]]]
+     |      ネットワークがダウンしている期間の開始日時と終了日時を取得する。
+     |      ネットワークがダウンしている期間は、全てのサーバーがダウンしている最短期間となる。
+     |      
+     |      Parameters
+     |      ----------
+     |      continuous : int, default = 3
+     |          サーバーがダウンしていることを判定するために、何度連続で応答が無いかを決定する閾値。
+     |      
+     |      Returns
+     |      -------
+     |      List[Tuple[DT.datetime, Optional[DT.datetime]]]
+     |          ネットワークがダウンしている開始日時と終了日時のペア。ログの末尾までダウンしている場合、終了日時は`None`となる。
+     |      
+     |      Example1
+     |      --------
+     |      出力は、実際には`datetime`オブジェクト(もしくは`None`)である点に注意。
+     |      
+     |      server A -> 2020-10-13 10:00:00 ~ 2020-10-13 10:45:00
+     |      
+     |      server B -> 2020-10-13 10:15:00 ~ 2020-10-13 11:00:00
+     |      
+     |      Result: ["2020-10-13 10:15:00", 2020-10-13 10:45:00]
+     |      
+     |      Example2
+     |      --------
+     |      出力は、実際には`datetime`オブジェクト(もしくは`None`)である点に注意。
+     |      
+     |      server A -> 2020-10-13 10:00:00 ~ None
+     |      
+     |      server B -> 2020-10-13 10:15:00 ~ None
+     |      
+     |      Result: ["2020-10-13 10:15:00", None]
+     |  
+     |  is_inside_network_ip(self, server: fixpoint_coding_test.Server.Server) -> bool
+     |      ネットワークにサーバーが所属可能か検査する
+     |      
+     |      Parameters
+     |      ----------
+     |      server : Server
+     |          確認を行う`Server`インスタンス
+     |      
+     |      Returns
+     |      -------
+     |      bool
+     |          サブネットの範囲内であれば`True`
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __dict__
+     |      dictionary for instance variables (if defined)
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  __annotations__ = {'servers': typing.List[fixpoint_coding_test.Server....
+
+FUNCTIONS
+    is_overlap_time(start1: datetime.datetime, end1: Union[datetime.datetime, NoneType], start2: datetime.datetime, end2: Union[datetime.datetime, NoneType]) -> bool
+        2つの時刻の範囲が重複しているか判定する。
+    
+    load_data(file_path: str, networks: List[Network.Network] = []) -> List[Network.Network]
+        ログデータからネットワーク切り分けの行われたサーバーデータを生成する
+        
+        Parameters
+        ----------
+        file_path : str
+            ログデータのファイルパス
+        networks : List[Network], optional
+            既存のデータがある場合のみ指定。
+            追記形式でデータを読み込む
+        
+        Returns
+        -------
+        List[Network]
+            IPアドレスで切り分けられたネットワークリスト
+    
+    print_networks_error(networks: List[Network.Network], continuous: int = 3, with_server_timeout: bool = True, with_server_overload: bool = True, time_threshold: int = 100) -> None
+        ネットワーク内のエラー情報を含めたサーバーエラー情報を出力する
+        
+        Parameters
+        ----------
+        networks : List[Network]
+            表示するネットワークリスト
+        continuous : int, default = 3
+            ダウン/過負荷状態と判定するために、何応答分まとめて処理を行うかの指定。
+        with_server_timeout : bool, default = True
+            サーバータイムアウト情報を同時に出力するかどうかを指定する
+        with_server_overload : bool, default = True
+            サーバー過負荷情報を同時に出力するかどうかを指定する
+        time_threshold : int, default = 100
+            過負荷状態と判定するための応答時間閾値
+
+DATA
+    Dict = typing.Dict
+    List = typing.List
+    Optional = typing.Optional
+    Set = typing.Set
+    Tuple = typing.Tuple
+    Union = typing.Union
+
+FILE
+    /home/hansy/git/fixpoint-coding-test/fixpoint_coding_test/Network.py
+
+
