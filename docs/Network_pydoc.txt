@@ -27,7 +27,7 @@ CLASSES
      |      
      |      Raises
      |      ------
-     |      AssertionError
+     |      ValueError
      |          追加するサーバーがネットワークに所属していない
      |  
      |  get_network_downtime(self, continuous: int = 3) -> List[Tuple[datetime.datetime, Union[datetime.datetime, NoneType]]]
@@ -43,6 +43,12 @@ CLASSES
      |      -------
      |      List[Tuple[DT.datetime, Optional[DT.datetime]]]
      |          ネットワークがダウンしている開始日時と終了日時のペア。ログの末尾までダウンしている場合、終了日時は`None`となる。
+     |      
+     |      Raises
+     |      ------
+     |      ValueError
+     |          `continuous` が 0以下に指定された
+     |      
      |      
      |      Example1
      |      --------
@@ -126,6 +132,11 @@ FUNCTIONS
             サーバー過負荷情報を同時に出力するかどうかを指定する
         time_threshold : int, default = 100
             過負荷状態と判定するための応答時間閾値
+        
+        Raises
+        ------
+        ValueError
+            入力値の入力範囲外の値が入力された
 
 DATA
     Dict = typing.Dict

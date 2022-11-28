@@ -57,11 +57,13 @@ class Server:
 
         Raises
         ------
-        AssertionError
+        ValueError
             `continuous` が 0以下に指定された
         """
 
-        assert continuous > 0, "Value Error -> continuous must over 0"
+        if not (continuous > 0):
+            raise ValueError(f"continuous must over 0 (now {continuous})")
+
         sorted_ping_results: List[Tuple[DT.datetime, int]] = sorted(self.ping_results.items())
         sorted_response: List[int] = [resp for _, resp in sorted_ping_results]
         # ダウンした列番号を取得
@@ -118,12 +120,15 @@ class Server:
 
         Raises
         ------
-        AssertionError
+        ValueError
             入力値の入力範囲外の値が入力された
         """
 
-        assert continuous > 0, "Value Error -> continuous must over 0"
-        assert time_threshold > 0, "Value Error -> time_threshold must over 0"
+        if not (continuous > 0):
+            raise ValueError(f"continuous must over 0 (now {continuous})")
+        if not (time_threshold > 0):
+            raise ValueError(f"time_threshold must over 0 (now {time_threshold})")
+
         sorted_ping_results: List[Tuple[DT.datetime, int]] = sorted(self.ping_results.items())
         sorted_response: List[int] = [resp for _, resp in sorted_ping_results]
 
@@ -190,11 +195,19 @@ def csv_to_params(csv_text: str) -> Tuple[str, str, int]:
         サーバーのIPアドレスとネットワークプレフィックス長のペア
     response_msec : int
         サーバーからの応答にかかった時間(ミリ秒)
+
+    Raises
+    ------
+    ValueError
+        正しくない入力がされた
     """
 
-    assert len(csv_text) != 0, "ValueError csv_text is empty"
+    if not (len(csv_text) != 0):
+        raise ValueError("csv_text must not empty (now empty)")
     params = csv_text.split(",")
-    assert len(params) == 3, f"ValueError '{csv_text}' is invalid format"
+    if not (len(params) == 3):
+        raise ValueError(f"'{csv_text}' is invalid format")
+
     datetime, server_address, result_msec_str = params
     response_msec: int = int(result_msec_str) if result_msec_str.isdigit() else Server.TIMEOUT_SYMBOL
     return datetime, server_address, response_msec
@@ -268,7 +281,7 @@ def print_server_downtime(servers: Dict[str, Server], continuous: int = 1):
     threshold : int, default=1
         サーバーがダウンしていると判断するために何度連続でタイム・アウトする必要があるかを決める閾値。
         デフォルトでは1回
-        0以下を指定した場合、AssertionErrorとなる
+        0以下を指定した場合、ValueErrorとなる
 
     Returns
     -------
@@ -278,7 +291,7 @@ def print_server_downtime(servers: Dict[str, Server], continuous: int = 1):
 
     Raises
     ------
-    AssertionError
+    ValueError
         `threshold` が 0以下に指定された
     """
 
@@ -308,7 +321,7 @@ def print_server_overload(servers: Dict[str, Server], continuous: int = 3, time_
 
     Raises
     ------
-    AssertionError
+    ValueError
         `continuous`か`time_threshold` が0以下に指定された。
     """
 
@@ -337,7 +350,7 @@ def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_thr
 
     Raises
     ------
-    AssertionError
+    ValueError
         `continuous`か`time_threshold` が0以下に指定された。
     """
 

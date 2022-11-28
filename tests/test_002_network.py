@@ -39,7 +39,7 @@ def test_append_network_error_01():
     ip_subnet = ipaddress.IPv4Network("192.168.11.1/24", strict=False)
     network = Network.Network(ip_subnet)
 
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(ValueError) as e:
         network.add_server(server=server)
 
     assert str(e.value) == "This server is not this network's subset."

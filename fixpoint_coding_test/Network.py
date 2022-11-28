@@ -29,11 +29,12 @@ class Network:
 
         Raises
         ------
-        AssertionError
+        ValueError
             追加するサーバーがネットワークに所属していない
         """
 
-        assert self.is_inside_network_ip(server=server), "This server is not this network's subset."
+        if not (self.is_inside_network_ip(server=server)):
+            raise ValueError("This server is not this network's subset.")
         self.servers.append(server)
 
     def is_inside_network_ip(self, server: Server) -> bool:
@@ -68,6 +69,12 @@ class Network:
         List[Tuple[DT.datetime, Optional[DT.datetime]]]
             ネットワークがダウンしている開始日時と終了日時のペア。ログの末尾までダウンしている場合、終了日時は`None`となる。
 
+        Raises
+        ------
+        ValueError
+            `continuous` が 0以下に指定された
+
+
         Example1
         --------
         出力は、実際には`datetime`オブジェクト(もしくは`None`)である点に注意。\n
@@ -82,6 +89,9 @@ class Network:
         server B -> 2020-10-13 10:15:00 ~ None\n
         Result: ["2020-10-13 10:15:00", None]
         """
+
+        if not (continuous > 0):
+            raise ValueError(f"continuous must over 0 (now {continuous})")
 
         # ネットワーク内の全てのサーバーのダウンタイムを取得する
         downtimes: Dict[ipaddress.IPv4Interface, List[Tuple[DT.datetime, Optional[DT.datetime]]]] = {
@@ -219,7 +229,17 @@ def print_networks_error(
         サーバー過負荷情報を同時に出力するかどうかを指定する
     time_threshold : int, default = 100
         過負荷状態と判定するための応答時間閾値
+
+    Raises
+    ------
+    ValueError
+        入力値の入力範囲外の値が入力された
     """
+
+    if not (continuous > 0):
+        raise ValueError(f"continuous must over 0 (now {continuous})")
+    if not (time_threshold > 0):
+        raise ValueError(f"time_threshold must over 0 (now {time_threshold})")
 
     def _add_label(
         time_pair: Tuple[DT.datetime, Optional[DT.datetime]],
