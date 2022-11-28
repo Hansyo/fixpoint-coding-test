@@ -15,5 +15,10 @@
         "editor.codeActionsOnSave": {
             "source.organizeImports": true
         }
-    }
+    },
+    "cSpell.words": [
+        "capfd",
+        "datetime",
+        "fixpoint"
+    ]
 }
