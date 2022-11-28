@@ -249,8 +249,8 @@ def print_networks_error(
         return (time_pair[0], time_pair[1], address, label)
 
     SWITCH_DOWN_LABEL = "switch down"
-    DOWNTIME_LABEL = "downtime"
-    OVERLOAD_LABEL = "overload"
+    DOWNTIME_LABEL = "server down"
+    OVERLOAD_LABEL = "server overload"
 
     for network in networks:
         network_downtime_list_pre = network.get_network_downtime(continuous=continuous)

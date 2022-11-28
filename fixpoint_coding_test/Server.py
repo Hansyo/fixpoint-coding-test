@@ -361,9 +361,9 @@ def print_server_error(servers: Dict[str, Server], continuous: int = 3, time_thr
 
     for server in servers.values():
         downtime_list_pre = server.get_downtimes(continuous=continuous)
-        downtime_list = [_add_label(data, "downtime") for data in downtime_list_pre]
+        downtime_list = [_add_label(data, "server down") for data in downtime_list_pre]
         overload_list_pre = server.get_overload_times(continuous=continuous, time_threshold=time_threshold)
-        overload_list = [_add_label(data, "overload") for data in overload_list_pre]
+        overload_list = [_add_label(data, "server overload") for data in overload_list_pre]
         errors_list = sorted(downtime_list + overload_list)
 
         if len(errors_list) != 0:
