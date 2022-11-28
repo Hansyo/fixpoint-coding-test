@@ -9,6 +9,7 @@
     "python.linting.mypyEnabled": true,
     "python.formatting.provider": "black",
     "python.formatting.blackPath": "~/.cache/pypoetry/virtualenvs/fixpoint-coding-test-3ti5_Wfc-py3.8/bin/black",
+    "python.linting.mypyPath": "~/.cache/pypoetry/virtualenvs/fixpoint-coding-test-3ti5_Wfc-py3.8/bin/mypy",
     "[python]": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {
